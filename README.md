@@ -304,36 +304,225 @@ authController.register = (req, res, next) => {
         // 1. req.body
         const { email, firstName, lastName, password, confirmPassword } = req.body
         console.log( email, firstName, lastName, password, confirmPassword)
+
+        // 2. validate
+        // if (!email) {
+        //     // return res.status(400).json({ message: "email is require" })
+        //     return createError(400, "email is required")
+        // }
+
+        // if (!firstName) {
+        //     // return res.status(400).json({ message: "first name is require" })
+        //     return createError(400, "first name is required")
+        // }
+
+        // if (!lastName) {
+        //     return createError(400, "last name is required")
+        // }
+
 // ....
 
 ```
 
 
-## Step 12 update auth-route.js
+## Step 12 create `middlewares` > `validators.js`
+
+```js
+const { z } = require("zod")
+
+// npm i zod
+// TEST validation
+exports.registerSchema = z.object({
+    email: z.string().email("email invalid"),
+    firstName: z.string().min(3, "firstName must > 3"),
+    lastName: z.string().min(3, "lastName must > 3"),
+    password: z.string().min(6, "password must > 6"),
+    confirmPassword: z.string().min(6, "password must > 6")
+}).refine((data) => data.password === data.confirmPassword, {
+    message: "Password not match",
+    path: ["confirmPassword"]
+})
+
+exports.loginSchema = z.object({
+    email: z.string().email("email invalid"),
+    password: z.string().min(6, "password must > 6")
+})
+
+exports.validationZod = (schema) => (req, res, next) => {
+    try {
+        console.log("hello middleware")
+        // console.log("hello middleware")
+        schema.parse(req.body)
+
+        next()
+    } catch (error) {
+        // console.log(error.errors[1].message)
+        const errMsg = error.errors.map(el => el.message)
+        const errTxt = errMsg.join(", ")
+        const mergeError = new Error(errTxt)
+        // combine all err msg
+
+        next(mergeError)
+    }
+}
+```
+
+
+## Step 13 update auth-route.js
 
 ```js
 const express = require("express");
 const router = express.Router()
 const authController = require("../controllers/auth-controller");
-const { z } = require("zod")
+const { validationZod, loginSchema, registerSchema } = require("../middlewares/validators")
 
-// npm i zod
-// TEST validation
+// {{url}}/api/register
+router.post("/register", validationZod(registerSchema), authController.register)
 
-const validationZod = () => (req, res, next) => {
+// {{url}}/api/login
+router.post("/login", validationZod(loginSchema), authController.login)
+
+module.exports = router;
+```
+
+## Step 14 prisma update
+`prisma > schema.prisma`
+
+```js
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model Profile {
+  id           Int        @id @default(autoincrement())
+  email       String  
+  firstName   String
+  lastName    String
+  role        Role        @default(USER)
+  password    String
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+```
+
+`.env`
+```
+DATABASE_URL="mysql://root:password@localhost:3306/landmark"
+```
+
+## Step 15 prisma migrate
+```bash
+npx prisma migrate dev --name init
+```
+prisma > migrations > 202502050xxxxxx_init > `migration.sql`
+we'll see tables in db
+
+## Step 16
+create folder `configs`
+
+file: prisma.js
+```js
+const { PrismaClient } = require("@prisma/client")
+const prisma = new PrismaClient()
+
+module.exports = prisma;
+```
+
+
+## Step 17 update controllers >  `auth-controller.js`
+check and create email
+
+```js
+const authController = {}
+const prisma = require('../configs/prisma')
+const createError = require('../utils/createError')
+const bcrypt = require("bcryptjs")
+
+authController.register = async (req, res, next) => {
+
     try {
-        console.log("hello middleware")
-        next()
+        // 1. req.body
+        const { email, firstName, lastName, password, confirmPassword } = req.body
+        
+        // 2. validate
+        // 3. check email(user) exist
+
+        const checkEmail = await prisma.profile.findFirst({
+            where: {
+                email,
+            }
+        })
+
+        // console.log(checkEmail) // return null is not dup. >> OK
+
+        if (checkEmail) {
+            return createError(400, "email is already used")
+        }
+
+        // 4. encrypt using 'bcrypt'
+        const salt = bcrypt.genSaltSync(10)
+        // console.log(salt)
+
+        const hashedPassword = await bcrypt.hash(password, salt)
+        console.log(hashedPassword)
+
+        // 5. insert into db
+        // 12sdfsdf34
+        const profile = await prisma.profile.create({
+            data: {
+                email,
+                firstName,
+                lastName,
+                password: hashedPassword
+            }
+        })
+
+        // 6. response to frontend >> register success
+        res.json({ message: "register success"})
+
     } catch (error) {
         next(error)
     }
 }
 
-// {{url}}/api/register
-router.post("/register", authController.register)
+authController.login = (req, res, next) => {
+    try {
+        // console.log(sss) // test error
+        const { email, password } = req.body
+        res.json({ message: "login ..." })
 
-// {{url}}/api/login
-router.post("/login", authController.login)
+    } catch (error) {
+        next(error)
+    }
+}
 
-module.exports = router;
+module.exports = authController
 ```
+
+check register using postman 
+
+path: {{url}}/api/register
+
+```
+{
+    "email": "admin@test.com",
+    "firstName": "admin",
+    "lastName": "admin",
+    "password": "12sdfsdf34",
+    "confirmPassword": "12sdfsdf34"
+}
+```
+
+
+

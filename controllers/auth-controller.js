@@ -1,39 +1,49 @@
 const authController = {}
+const prisma = require('../configs/prisma')
 const createError = require('../utils/createError')
+const bcrypt = require("bcryptjs")
 
-authController.register = (req, res, next) => {
+authController.register = async (req, res, next) => {
 
     try {
         // 1. req.body
         const { email, firstName, lastName, password, confirmPassword } = req.body
-        console.log( email, firstName, lastName, password, confirmPassword)
-
+        
         // 2. validate
-        if (!email) {
-            // return res.status(400).json({ message: "email is require" })
-            return createError(400, "email is required")
-        }
-
-        if (!firstName) {
-            // return res.status(400).json({ message: "first name is require" })
-            return createError(400, "first name is required")
-        }
-
-        if (!lastName) {
-            return createError(400, "last name is required")
-        }
-
         // 3. check email(user) exist
 
+        const checkEmail = await prisma.profile.findFirst({
+            where: {
+                email,
+            }
+        })
+
+        // console.log(checkEmail) // return null is not dup. >> OK
+
+        if (checkEmail) {
+            return createError(400, "email is already used")
+        }
 
         // 4. encrypt using 'bcrypt'
+        const salt = bcrypt.genSaltSync(10)
+        // console.log(salt)
 
+        const hashedPassword = await bcrypt.hash(password, salt)
+        console.log(hashedPassword)
 
         // 5. insert into db
-
+        // 12sdfsdf34
+        const profile = await prisma.profile.create({
+            data: {
+                email,
+                firstName,
+                lastName,
+                password: hashedPassword
+            }
+        })
 
         // 6. response to frontend >> register success
-        res.json({ message: "hello, register"})
+        res.json({ message: "register success"})
 
     } catch (error) {
         next(error)
