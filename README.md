@@ -35,3 +35,10 @@ git remote add origin https://github.com/ouyniya/cc19_backend_recap.git
 git branch -M main
 git push -u origin main
 ```
+
+when update code
+```bash
+git add .
+git commit -m "message"
+git push
+```
