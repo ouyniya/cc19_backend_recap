@@ -200,7 +200,7 @@ create folder `middlewares`
 file: `error.js`
 
 ```js
-const handleError = (err, req, res, next) => {
+const handleErrors = (err, req, res, next) => {
 
     // err from util > createError
     console.log(err)
@@ -213,5 +213,64 @@ const handleError = (err, req, res, next) => {
     
 }
 
-module.exports = handleError;
+module.exports = handleErrors;
+```
+
+### update index.js
+
+```js
+// import
+require("dotenv").config()
+const express = require("express")
+const cors = require("cors")
+const morgan = require("morgan")
+
+const authRoute = require('./routes/auth-route')
+const handleErrors = require("./middlewares/error") // ***
+
+// instance
+const app = express()
+
+// middlewares 
+app.use(express.json()) // for read json from req.body
+app.use(cors()) // allow cross domain: diff port can get data from our server
+app.use(morgan("dev")) // show output colored by response status for development use in terminal
+
+// routes
+app.use("/api", authRoute)
+
+// error middlewares
+app.use(handleErrors) // ***
+
+
+// open server
+const port = 8000
+app.listen(port, () => console.log(`Server is running on port ${port}`))
+```
+
+### update auth-controller.js
+change code in catch >> next(error) 
+`error` will to to handlerErrors middlewares
+
+```js
+catch (error) {
+    next(error) // ***
+}
+```
+
+test in postman 
+`auth-controller.js` 
+
+```js
+try {
+        console.log(sss) // test error ***
+        res.json({ message: "login ..." })
+    } 
+```
+
+result in postman body
+```
+{
+    "message": "sss is not defined"
+}
 ```

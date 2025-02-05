@@ -1,4 +1,4 @@
-const handleError = (err, req, res, next) => {
+const handleErrors = (err, req, res, next) => {
 
     // err from util > createError
     console.log(err)
@@ -11,4 +11,4 @@ const handleError = (err, req, res, next) => {
     
 }
 
-module.exports = handleError;
+module.exports = handleErrors;

@@ -8,9 +8,9 @@ authController.register = (req, res, next) => {
 
     } catch (error) {
 
-        console.log(error)
-        res.status(500).json({ message: "server error!!..." })
-        // next(error)
+        // console.log(error)
+        // res.status(500).json({ message: "server error!!..." })
+        next(error)
 
     }
 }
@@ -19,9 +19,10 @@ authController.login = (req, res, next) => {
     try {
         // console.log(sss) // test error
         res.json({ message: "login ..." })
+
     } catch (error) {
-        console.log(error.message)
-        res.status(500).json({ message: "server error..." })
+        
+        next(error)
     }
 }
 

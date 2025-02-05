@@ -5,6 +5,7 @@ const cors = require("cors")
 const morgan = require("morgan")
 
 const authRoute = require('./routes/auth-route')
+const handleErrors = require("./middlewares/error")
 
 // instance
 const app = express()
@@ -13,11 +14,13 @@ const app = express()
 app.use(express.json()) // for read json from req.body
 app.use(cors()) // allow cross domain: diff port can get data from our server
 app.use(morgan("dev")) // show output colored by response status for development use in terminal
+// e.g. POST /api/login 200 3.006 ms - 23
 
 // routes
 app.use("/api", authRoute)
 
 // error middlewares
+app.use(handleErrors)
 
 
 // open server
