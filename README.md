@@ -135,7 +135,6 @@ authController.register = (req, res, next) => {
 module.exports = authController
 ```
 
-
 ## Step 7 update index.js
 add this code:
 ```js
@@ -161,4 +160,58 @@ result
 {
     "message": "register... "
 }
+```
+
+## Step 8 update auth-controller.js
+add login function before module.exports
+
+```js
+authController.login = (req, res, next) => {
+    try {
+        // console.log(sss) // test error
+        res.json({ message: "login ..." })
+    } catch (error) {
+        console.log(error.message)
+        res.status(500).json({ message: "server error..." })
+    }
+}
+
+// module.exports = authController
+```
+
+### update auth-route.js
+```js
+const express = require("express");
+const authController = require("../controllers/auth-controller");
+const router = express.Router()
+
+// {{url}}/api/register
+router.post("/register", authController.register)
+
+// {{url}}/api/login
+router.post("/login", authController.login)
+
+module.exports = router;
+```
+
+
+## Step 9 create error middleware
+create folder `middlewares`
+file: `error.js`
+
+```js
+const handleError = (err, req, res, next) => {
+
+    // err from util > createError
+    console.log(err)
+
+    res
+        .status(err.statusCode || 500)
+        .json({ 
+            message: err.message || "Internal server error!!!" 
+        })
+    
+}
+
+module.exports = handleError;
 ```
