@@ -6,6 +6,7 @@ const morgan = require("morgan")
 
 const authRoute = require('./routes/auth-route')
 const handleErrors = require("./middlewares/error")
+const userRoute = require("./routes/user-route")
 
 // instance
 const app = express()
@@ -18,6 +19,7 @@ app.use(morgan("dev")) // show output colored by response status for development
 
 // routes
 app.use("/api", authRoute)
+app.use("/api/user", userRoute)
 
 // error middlewares
 app.use(handleErrors)

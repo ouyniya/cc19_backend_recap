@@ -2,6 +2,7 @@ const authController = {}
 const prisma = require('../configs/prisma')
 const createError = require('../utils/createError')
 const bcrypt = require("bcryptjs")
+const jwt = require("jsonwebtoken")
 
 authController.register = async (req, res, next) => {
 
@@ -50,15 +51,67 @@ authController.register = async (req, res, next) => {
     }
 }
 
-authController.login = (req, res, next) => {
+authController.login = async (req, res, next) => {
     try {
-        // console.log(sss) // test error
+        // 1. req.body
         const { email, password } = req.body
-        res.json({ message: "login ..." })
+
+        // 2. check email and password
+        const profile = await prisma.profile.findFirst({
+            where: {
+                email,
+            }
+        })
+
+        if (!profile) {
+            return createError(400, "Email or password is invalid")
+        }
+
+        console.log(profile)
+
+        // check password valid
+
+        const isPasswordValid = await bcrypt.compare(password, profile.password)
+
+        if (!isPasswordValid) {
+            return createError(400, "Password is invalid")
+        }
+
+        // 3. generate token
+        const payload = { 
+            id: profile.id,
+            email: profile.email,
+            firstName: profile.firstName,
+            lastName: profile.lastName
+        }
+
+        
+        const token = jwt.sign(payload, process.env.JWT_SECRET_KEY, {
+            expiresIn: process.env.JWT_EXPIRED_IN
+        })
+        
+        // console.log(token)
+
+        // 4. response
+
+        // console.log(sss) // test error
+        res.json({ message: "login success",
+            payload,
+            token
+         })
 
     } catch (error) {
         next(error)
     }
 }
+
+authController.currentUser = async (req, res, next) => {
+    try {
+        res.json({ message: "Hello current user" })
+    } catch (error) {
+        next(error)
+    }
+}
+
 
 module.exports = authController

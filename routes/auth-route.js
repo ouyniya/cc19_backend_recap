@@ -9,4 +9,7 @@ router.post("/register", validationZod(registerSchema), authController.register)
 // {{url}}/api/login
 router.post("/login", validationZod(loginSchema), authController.login)
 
+// {{url}}/api/current-user
+router.get("/current-user", authController.currentUser)
+
 module.exports = router;

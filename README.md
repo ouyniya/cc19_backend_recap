@@ -524,5 +524,204 @@ path: {{url}}/api/register
 }
 ```
 
+## Step 18 log in 
+
+update file `auth-controller.js`
+
+```js
+// top
+const jwt = require("jsonwebtoken")
+```
+
+```js
+// bottom
+
+authController.login = async (req, res, next) => {
+    try {
+        // 1. req.body
+        const { email, password } = req.body
+
+        // 2. check email and password
+        const profile = await prisma.profile.findFirst({
+            where: {
+                email,
+            }
+        })
+
+        if (!profile) {
+            return createError(400, "Email or password is invalid")
+        }
+
+        console.log(profile)
+
+        // check password valid
+
+        const isPasswordValid = await bcrypt.compare(password, profile.password)
+
+        if (!isPasswordValid) {
+            return createError(400, "Password is invalid")
+        }
+
+        // 3. generate token
+        const payload = { 
+            id: profile.id,
+            email: profile.email,
+            firstName: profile.firstName,
+            lastName: profile.lastName
+        }
+
+        
+        const token = jwt.sign(payload, process.env.JWT_SECRET_KEY, {
+            expiresIn: process.env.JWT_EXPIRED_IN
+        })
+        
+        // console.log(token)
+
+        // 4. response
+
+        // console.log(sss) // test error
+        res.json({ message: "login success",
+            payload,
+            token
+         })
+
+    } catch (error) {
+        next(error)
+    }
+}
+
+module.exports = authController
+```
+
+## Step 20 update .env
+```js
+// bottom 
+
+JWT_SECRET_KEY=facebook
+JWT_EXPIRED_IN=1d
+```
+
+test: postman
+method: post
+url: {{url}}/api/login
+
+```
+{
+    "email": "admin@test.com",
+    "password": "12sdfsdf34"
+}
+```
+```
+{
+    "message": "login success",
+    "payload": {
+        "id": 2,
+        "email": "admin@test.com",
+        "firstName": "admin",
+        "lastName": "admin"
+    },
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwiZW1haWwiOiJhZG1pbkB0ZXN0LmNvbSIsImZpcnN0TmFtZSI6ImFkbWluIiwibGFzdE5hbWUiOiJhZG1pbiIsImlhdCI6MTczODc0NTc5NCwiZXhwIjoxNzM4ODMyMTk0fQ.HmXsYGBfZTokrNW-wj-IZjThoDwT6QoEnqSzkfWiFvA"
+}
+```
+
+## Step 21 Current user
+
+update `auth-controller.js`
+
+```js
+// bottom 
+
+authController.currentUser = async (req, res, next) => {
+    try {
+        res.json({ message: "Hello current user" })
+    } catch (error) {
+        next(error)
+    }
+}
 
 
+module.exports = authController
+```
+
+## Step 22 user controller and routes 
+
+update controllers/user-routes.js
+```js
+// 1. list all users
+// 2. update role
+// 3. delete user
+
+exports.listUsers = async (req, res, next) => {
+    try {
+        res.json({ message: "Hello, list user" })
+    } catch (error) {
+        next(error)
+    }
+}
+
+exports.updateRole = async (req, res, next) => {
+    try {
+        res.json({ message: "update role" })
+    } catch (error) {
+        next(error)
+    }
+}
+
+exports.deleteUser = (req, res, next) => {
+    try {
+        res.json({ message: "delete user" })
+    } catch (error) {
+        next(error)
+    }
+}
+```
+
+/routes/user-routes.js
+```js
+const express = require("express")
+const router = express.Router()
+const userControllers = require("../controllers/user-controller")
+
+
+router.get("/users", userControllers.listUsers)
+
+router.patch("/user/update-role", userControllers.updateRole)
+
+router.delete("/user/:id", userControllers.deleteUser)
+
+module.exports = router
+```
+
+update index.js
+```js
+// import
+require("dotenv").config()
+const express = require("express")
+const cors = require("cors")
+const morgan = require("morgan")
+
+const authRoute = require('./routes/auth-route')
+const handleErrors = require("./middlewares/error")
+const userRoute = require("./routes/user-route") // ******
+
+// instance
+const app = express()
+
+// middlewares 
+app.use(express.json()) // for read json from req.body
+app.use(cors()) // allow cross domain: diff port can get data from our server
+app.use(morgan("dev")) // show output colored by response status for development use in terminal
+// e.g. POST /api/login 200 3.006 ms - 23
+
+// routes
+app.use("/api", authRoute)
+app.use("/api/user", userRoute) // ******
+
+// error middlewares
+app.use(handleErrors)
+
+
+// open server
+const port = 8000
+app.listen(port, () => console.log(`Server is running on port ${port}`))
+```
