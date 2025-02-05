@@ -1,7 +1,7 @@
 const handleErrors = (err, req, res, next) => {
 
     // err from util > createError
-    console.log(err)
+    // console.log(err)
 
     res
         .status(err.statusCode || 500)

@@ -274,3 +274,66 @@ result in postman body
     "message": "sss is not defined"
 }
 ```
+
+## Step 10 create `createError.js`
+folder: `utils`
+file: `createError.js`
+
+```js
+const createError = (statusCode, message) => {
+    const error = new Error(message)
+    error.statusCode = statusCode // add key = statusCode, value = statusCode 
+    throw error 
+}
+
+module.exports = createError;
+```
+## Step 11 import to use the util
+update auth-controller.js
+
+```js
+// top
+const createError = require('../utils/createError')
+```
+
+```js
+
+authController.register = (req, res, next) => {
+
+    try {
+        // 1. req.body
+        const { email, firstName, lastName, password, confirmPassword } = req.body
+        console.log( email, firstName, lastName, password, confirmPassword)
+// ....
+
+```
+
+
+## Step 12 update auth-route.js
+
+```js
+const express = require("express");
+const router = express.Router()
+const authController = require("../controllers/auth-controller");
+const { z } = require("zod")
+
+// npm i zod
+// TEST validation
+
+const validationZod = () => (req, res, next) => {
+    try {
+        console.log("hello middleware")
+        next()
+    } catch (error) {
+        next(error)
+    }
+}
+
+// {{url}}/api/register
+router.post("/register", authController.register)
+
+// {{url}}/api/login
+router.post("/login", authController.login)
+
+module.exports = router;
+```
