@@ -712,7 +712,7 @@ module.exports = router;
 
 ## Step 24 create user controller and routes 
 
-update controllers/user-routes.js
+update controllers/user-controller.js
 ```js
 // 1. list all users
 // 2. update role
@@ -878,4 +878,198 @@ router.post("/login", validationZod(loginSchema), authController.login)
 router.get("/current-user", auth, authController.currentUser) // ***
 
 module.exports = router;
+```
+### update auth-controller.js
+```js
+const authController = {}
+const prisma = require('../configs/prisma')
+const createError = require('../utils/createError')
+const bcrypt = require("bcryptjs")
+const jwt = require("jsonwebtoken")
+
+authController.register = async (req, res, next) => {
+
+    try {
+        // 1. req.body
+        const { email, firstName, lastName, password, confirmPassword } = req.body
+        
+        // 2. validate
+        // 3. check email(user) exist
+
+        const checkEmail = await prisma.profile.findFirst({
+            where: {
+                email,
+            }
+        })
+
+        // console.log(checkEmail) // return null is not dup. >> OK
+
+        if (checkEmail) {
+            return createError(400, "email is already used")
+        }
+
+        // 4. encrypt using 'bcrypt'
+        const salt = bcrypt.genSaltSync(10)
+        // console.log(salt)
+
+        const hashedPassword = await bcrypt.hash(password, salt)
+        console.log(hashedPassword)
+
+        // 5. insert into db
+        // 12sdfsdf34
+        const profile = await prisma.profile.create({
+            data: {
+                email,
+                firstName,
+                lastName,
+                password: hashedPassword
+            }
+        })
+
+        // 6. response to frontend >> register success
+        res.json({ message: "register success"})
+
+    } catch (error) {
+        next(error)
+    }
+}
+
+authController.login = async (req, res, next) => {
+    try {
+        // 1. req.body
+        const { email, password } = req.body
+
+        // 2. check email and password
+        const profile = await prisma.profile.findFirst({
+            where: {
+                email,
+            }
+        })
+
+        if (!profile) {
+            return createError(400, "Email or password is invalid")
+        }
+
+        console.log(profile)
+
+        // check password valid
+
+        const isPasswordValid = await bcrypt.compare(password, profile.password)
+
+        if (!isPasswordValid) {
+            return createError(400, "Password is invalid")
+        }
+
+        // 3. generate token
+        const payload = { 
+            id: profile.id,
+            email: profile.email,
+            firstName: profile.firstName,
+            lastName: profile.lastName,
+            role: profile.role
+        }
+
+        const token = jwt.sign(payload, process.env.JWT_SECRET_KEY, {
+            expiresIn:"1d"
+        })
+        
+        // console.log(token)
+
+        // 4. response
+
+        // console.log(sss) // test error
+        // send to frontend (Zustand) : local storage
+        // use to redirect page (admin, user)
+        res.json({ message: "login success",
+            payload,
+            token
+         })
+
+    } catch (error) {
+        next(error)
+    }
+}
+
+authController.currentUser = async (req, res, next) => {
+    try {
+        res.json({ message: "Hello current user" })
+    } catch (error) {
+        next(error)
+    }
+}
+
+
+module.exports = authController
+```
+
+## Step 27 update user-controller.js
+
+```js
+// 1. list all users
+// 2. update role
+// 3. delete user
+
+const prisma = require("../configs/prisma")
+
+exports.listUsers = async (req, res, next) => {
+    try {
+        console.log(req.user)
+
+        // no password 
+        const users = await prisma.profile.findMany({
+            omit: {
+                password: true
+            }
+        })
+        console.log(users)
+
+        res.json({ result: users })
+    } catch (error) {
+        next(error)
+    }
+}
+
+exports.updateRole = async (req, res, next) => {
+    try {
+        const { id, role } = req.body
+        console.log(id, role)
+
+        const updated = await prisma.profile.update({
+            where: {
+                id: Number(id)
+            },
+            data: {
+                role: role
+            }
+        })
+
+        res.json({ message: "update role success" })
+    } catch (error) {
+        next(error)
+    }
+}
+
+exports.deleteUser = async (req, res, next) => {
+    try {
+        const { id } = req.params
+        console.log(id)
+
+        const deleted = await prisma.profile.delete({
+            where: {
+                id: Number(id)
+            }, 
+            select: {
+                id: true,
+            }
+        })
+
+        console.log(deleted)
+        
+        res.json({ message: "delete user successfully!!", 
+            id: deleted.id
+         })
+    } catch (error) {
+        next(error)
+    }
+}
 ```
