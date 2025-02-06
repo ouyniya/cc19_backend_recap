@@ -82,12 +82,12 @@ authController.login = async (req, res, next) => {
             id: profile.id,
             email: profile.email,
             firstName: profile.firstName,
-            lastName: profile.lastName
+            lastName: profile.lastName,
+            role: profile.role
         }
 
-        
         const token = jwt.sign(payload, process.env.JWT_SECRET_KEY, {
-            expiresIn: process.env.JWT_EXPIRED_IN
+            expiresIn:"1d"
         })
         
         // console.log(token)
@@ -95,6 +95,8 @@ authController.login = async (req, res, next) => {
         // 4. response
 
         // console.log(sss) // test error
+        // send to frontend (Zustand) : local storage
+        // use to redirect page (admin, user)
         res.json({ message: "login success",
             payload,
             token

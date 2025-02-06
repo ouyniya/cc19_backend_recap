@@ -643,7 +643,74 @@ authController.currentUser = async (req, res, next) => {
 module.exports = authController
 ```
 
-## Step 22 user controller and routes 
+## Step 22 validator using Zod
+create middlewares/ `validators.js`
+
+```bash
+npm i zod
+```
+
+```js
+const { z } = require("zod")
+
+// npm i zod
+// TEST validation
+exports.registerSchema = z.object({
+    email: z.string().email("email invalid"),
+    firstName: z.string().min(3, "firstName must > 3"),
+    lastName: z.string().min(3, "lastName must > 3"),
+    password: z.string().min(6, "password must > 6"),
+    confirmPassword: z.string().min(6, "password must > 6")
+}).refine((data) => data.password === data.confirmPassword, {
+    message: "Password not match",
+    path: ["confirmPassword"]
+})
+
+exports.loginSchema = z.object({
+    email: z.string().email("email invalid"),
+    password: z.string().min(6, "password must > 6")
+})
+
+exports.validationZod = (schema) => (req, res, next) => {
+    try {
+        // console.log("hello middleware")
+        // console.log("hello middleware")
+        schema.parse(req.body)
+
+        next()
+    } catch (error) {
+        // console.log(error.errors[1].message)
+        const errMsg = error.errors.map(el => el.message)
+        const errTxt = errMsg.join(", ")
+        const mergeError = new Error(errTxt)
+
+        next(mergeError)
+    }
+}
+
+```
+
+## Step 23 update auth-route.js
+```js
+const express = require("express");
+const router = express.Router()
+const authController = require("../controllers/auth-controller");
+const { validationZod, loginSchema, registerSchema } = require("../middlewares/validators"); // ***
+
+// {{url}}/api/register
+router.post("/register", validationZod(registerSchema), authController.register) // ***
+
+// {{url}}/api/login
+router.post("/login", validationZod(loginSchema), authController.login) // ***
+
+// {{url}}/api/current-user
+router.get("/current-user", authController.currentUser)
+
+module.exports = router;
+```
+
+
+## Step 24 create user controller and routes 
 
 update controllers/user-routes.js
 ```js
@@ -724,4 +791,91 @@ app.use(handleErrors)
 // open server
 const port = 8000
 app.listen(port, () => console.log(`Server is running on port ${port}`))
+```
+
+
+## Step 25 create `auth-middleware.js` 
+folder `middlewares`
+
+```js
+const createError = require('../utils/createError')
+const jwt = require("jsonwebtoken")
+
+exports.auth = (req, res, next) => {
+    try {
+        // authorize 
+        const authorization = req.headers.authorization
+
+        // ---- req.headers ----
+        // {
+        //     authorization: 'Bearer kaika',
+        //     'user-agent': 'PostmanRuntime/7.40.0',
+        //     accept: '*/*',
+        //     'postman-token': '0d01b66f-8809-4d0a-95c0-d46f78ccf8e7',
+        //     host: 'localhost:8000',
+        //     'accept-encoding': 'gzip, deflate, br',
+        //     connection: 'keep-alive'
+        //   }
+
+        // console.log(authorization)
+        // // >> Bearer kaika
+
+        if (!authorization) {
+            // authorization === undefined 
+            return createError(400, "Missing value!!")
+        }
+
+        // only txt after Bearer
+        const token = authorization.split(" ")[1]
+
+        // var decoded = jwt.decode(token);
+        // console.log("d", decoded)
+        // {
+        // id: 2,
+        // email: 'admin@test.com',
+        // firstName: 'admin',
+        // lastName: 'admin',
+        // role: 'ADMIN',
+        // iat: 1738813871,
+        // exp: 1738900271
+        // }
+
+        jwt.verify(token, process.env.JWT_SECRET_KEY, (err, decode) => {
+            // console.log(err)
+            // console.log(decode)
+
+            if (err) {
+                return createError(401, "Unauthorized")
+            }
+            // create property decode 
+            req.user = decode
+            // console.log(req.user)
+
+            next()
+        })
+
+    } catch (error) {
+        next(error)
+    }
+};
+```
+
+## Step 26 update `auth-route.js`
+```js
+const express = require("express");
+const router = express.Router()
+const authController = require("../controllers/auth-controller");
+const { validationZod, loginSchema, registerSchema } = require("../middlewares/validators");
+const { auth } = require("../middlewares/auth-middleware"); // ***
+
+// {{url}}/api/register
+router.post("/register", validationZod(registerSchema), authController.register)
+
+// {{url}}/api/login
+router.post("/login", validationZod(loginSchema), authController.login)
+
+// {{url}}/api/current-user
+router.get("/current-user", auth, authController.currentUser) // ***
+
+module.exports = router;
 ```

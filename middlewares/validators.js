@@ -20,7 +20,7 @@ exports.loginSchema = z.object({
 
 exports.validationZod = (schema) => (req, res, next) => {
     try {
-        console.log("hello middleware")
+        // console.log("hello middleware")
         // console.log("hello middleware")
         schema.parse(req.body)
 
