@@ -33,7 +33,7 @@ exports.auth = (req, res, next) => {
 
         jwt.verify(token, process.env.JWT_SECRET_KEY, (err, decode) => {
             // console.log(err)
-            // console.log(decode)
+            // console.log('****', decode)
 
             if (err) {
                 return createError(401, "Unauthorized")

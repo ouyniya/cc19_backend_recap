@@ -19,7 +19,7 @@ app.use(morgan("dev")) // show output colored by response status for development
 
 // routes
 app.use("/api", authRoute)
-app.use("/api/user", userRoute)
+app.use("/api", userRoute)
 
 // error middlewares
 app.use(handleErrors)

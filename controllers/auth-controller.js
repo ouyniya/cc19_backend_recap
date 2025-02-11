@@ -30,7 +30,7 @@ authController.register = async (req, res, next) => {
         // console.log(salt)
 
         const hashedPassword = await bcrypt.hash(password, salt)
-        console.log(hashedPassword)
+        // console.log(hashedPassword)
 
         // 5. insert into db
         // 12sdfsdf34
@@ -67,7 +67,7 @@ authController.login = async (req, res, next) => {
             return createError(400, "Email or password is invalid")
         }
 
-        console.log(profile)
+        // console.log(profile)
 
         // check password valid
 
@@ -109,7 +109,24 @@ authController.login = async (req, res, next) => {
 
 authController.currentUser = async (req, res, next) => {
     try {
-        res.json({ message: "Hello current user" })
+        // console.log(req.user)
+
+        const { email } = req.user
+
+        const profile = await prisma.profile.findFirst({
+            where: {
+                email
+            }, 
+            select: {
+                id: true,
+                email: true,
+                role: true
+            }
+        })
+
+        // console.log(profile)
+
+        res.json({ result: profile })
     } catch (error) {
         next(error)
     }

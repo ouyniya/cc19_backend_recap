@@ -1,392 +1,251 @@
-# Server
+# Server# Node.js Express API Setup Guide
 
-## Step 1 create `package.json`
+## Table of Contents
+1. [Initialize the Project](#step-1-initialize-the-project)
+2. [Install Dependencies](#step-2-install-dependencies)
+3. [Set Up Git](#step-3-set-up-git)
+4. [Update Package Scripts and Start Server](#step-4-update-package-scripts-and-start-server)
+5. [Create Routes](#step-5-create-routes)
+6. [Create Controller](#step-6-create-controller)
+7. [Update Main Server File](#step-7-update-main-server-file)
+8. [Enhance Authentication](#step-8-enhance-authentication)
+9. [Implement Error Handling](#step-9-implement-error-handling)
+
+---
+
+## Step 1: Initialize the Project
+Run the following command to create a `package.json` file:
 ```bash
 npm init -y
 ```
 
-## Step 2 install package
+## Step 2: Install Dependencies
+Install the required packages:
 ```bash
 npm install express nodemon cors morgan bcryptjs jsonwebtoken zod prisma dotenv
 ```
-
-สร้างไฟล์ .env และ /prisma ที่มีไฟล์ schema.prisma
+Initialize Prisma:
 ```bash
 npx prisma init
 ```
-
-### สร้างไฟล์ `.gitignore`
+Create a `.gitignore` file and add:
 ```
 /node_modules
 .env
 ```
 
-
-### create server and update middlewares
-create `index.js` and update as follows:
-```js
-// import
-require("dotenv").config()
-const express = require("express")
-const cors = require("cors")
-const morgan = require("morgan")
-
-// instance
-const app = express()
-
-// middlewares 
-app.use(express.json()) // for read json from req.body
-app.use(cors()) // allow cross domain: diff port can get data from our server
-app.use(morgan("dev")) // show output colored by response status for development use in terminal
-
-// routes
-app.get("/", (req, res, next) => {
-    res.json({ message: "get home" })
-})
-
-// error middlewares
-
-
-// open server
-const port = 8000
-app.listen(port, () => console.log(`Server is running on port ${port}`))
-
-```
-
-
-## Step 3 Git
+## Step 3: Set Up Git
+Initialize a Git repository and commit initial files:
 ```bash
 git init
 git add .
-git commit -m "start"
+git commit -m "Initial commit"
 ```
-
-next step
-copy code from repo
+Connect to a GitHub repository:
 ```bash
-git remote add origin https://github.com/ouyniya/cc19_backend_recap.git
+git remote add origin https://github.com/yourusername/repository.git
 git branch -M main
 git push -u origin main
 ```
-
-when update code
+To update code:
 ```bash
 git add .
-git commit -m "message"
+git commit -m "Your commit message"
 git push
 ```
 
-## Step 4
-update package.json
-```js
- "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+## Step 4: Update Package Scripts and Start Server
+Modify `package.json` to include:
+```json
+"scripts": {
     "start": "nodemon ."
-  },
+}
 ```
-
-start server
+Start the server:
 ```bash
 npm start
 ```
-console: Server is running on port 8000
+Expected console output:
+```
+Server is running on port 8000
+```
 
-
-## Step 5 create routes
-create folder `routes`
-files:
-- `auth-route.js`
-
+## Step 5: Create Routes
+Create a `routes` folder and add `auth-route.js`:
 ```js
 const express = require("express");
-const authController = require("../controllers/auth-controller"); // insert after create controller 
-const router = express.Router()
+const authController = require("../controllers/auth-controller");
+const router = express.Router();
 
-router.post("/register", authController.register)
+router.post("/register", authController.register);
 
 module.exports = router;
 ```
 
-
-## Step 6 create controller
-
-create folder `controllers`
-files:
-- `auth-controller.js`
-
+## Step 6: Create Controller
+Create a `controllers` folder and add `auth-controller.js`:
 ```js
-const authController = {}
+const authController = {};
 
 authController.register = (req, res, next) => {
-    
     try {
-
-        res.json({ message: "register... " })
-
+        res.json({ message: "Register successful" });
     } catch (error) {
-
-        console.log(error)
-        res.status(500).json({ message: "server error!!..." })
-        // next(error)
-
+        next(error);
     }
-}
+};
 
-module.exports = authController
+module.exports = authController;
 ```
 
-## Step 7 update index.js
-add this code:
+## Step 7: Update Main Server File
+Create `index.js` and set up the server:
 ```js
-// import
-// ...
-const authRoute = require('./routes/auth-route')
-// ...
+require("dotenv").config();
+const express = require("express");
+const cors = require("cors");
+const morgan = require("morgan");
+const authRoute = require("./routes/auth-route");
+
+const app = express();
+
+// Middlewares
+app.use(express.json());
+app.use(cors());
+app.use(morgan("dev"));
+
+// Routes
+app.use("/api", authRoute);
+
+const port = 8000;
+app.listen(port, () => console.log(`Server is running on port ${port}`));
 ```
 
-```js
-// routes
-app.use("/api", authRoute)
-```
-
-test postman
-```
-Method: POST
-{{url}}/api/register
-```
-
-result
-```
-{
-    "message": "register... "
-}
-```
-
-## Step 8 update auth-controller.js
-add login function before module.exports
-
+## Step 8: Enhance Authentication
+Add a login function to `auth-controller.js`:
 ```js
 authController.login = (req, res, next) => {
     try {
-        // console.log(sss) // test error
-        res.json({ message: "login ..." })
+        res.json({ message: "Login successful" });
     } catch (error) {
-        console.log(error.message)
-        res.status(500).json({ message: "server error..." })
+        next(error);
     }
-}
-
-// module.exports = authController
+};
 ```
-
-### update auth-route.js
+Update `auth-route.js`:
 ```js
-const express = require("express");
-const authController = require("../controllers/auth-controller");
-const router = express.Router()
-
-// {{url}}/api/register
-router.post("/register", authController.register)
-
-// {{url}}/api/login
-router.post("/login", authController.login)
-
-module.exports = router;
+router.post("/login", authController.login);
 ```
 
-
-## Step 9 create error middleware
-create folder `middlewares`
-file: `error.js`
-
+## Step 9: Implement Error Handling
+Create a `middlewares` folder and add `error.js`:
 ```js
 const handleErrors = (err, req, res, next) => {
-
-    // err from util > createError
-    console.log(err)
-
-    res
-        .status(err.statusCode || 500)
-        .json({ 
-            message: err.message || "Internal server error!!!" 
-        })
-    
-}
+    console.error(err);
+    res.status(err.statusCode || 500).json({ message: err.message || "Internal server error" });
+};
 
 module.exports = handleErrors;
 ```
-
-### update index.js
-
+Update `index.js` to use error handling:
 ```js
-// import
-require("dotenv").config()
-const express = require("express")
-const cors = require("cors")
-const morgan = require("morgan")
-
-const authRoute = require('./routes/auth-route')
-const handleErrors = require("./middlewares/error") // ***
-
-// instance
-const app = express()
-
-// middlewares 
-app.use(express.json()) // for read json from req.body
-app.use(cors()) // allow cross domain: diff port can get data from our server
-app.use(morgan("dev")) // show output colored by response status for development use in terminal
-
-// routes
-app.use("/api", authRoute)
-
-// error middlewares
-app.use(handleErrors) // ***
-
-
-// open server
-const port = 8000
-app.listen(port, () => console.log(`Server is running on port ${port}`))
+const handleErrors = require("./middlewares/error");
+app.use(handleErrors);
 ```
-
-### update auth-controller.js
-change code in catch >> next(error) 
-`error` will to to handlerErrors middlewares
-
+Test error handling by triggering an error in `auth-controller.js`:
 ```js
-catch (error) {
-    next(error) // ***
-}
+console.log(undefinedVariable);
 ```
-
-test in postman 
-`auth-controller.js` 
-
-```js
-try {
-        console.log(sss) // test error ***
-        res.json({ message: "login ..." })
-    } 
-```
-
-result in postman body
-```
+Expected response in Postman:
+```json
 {
-    "message": "sss is not defined"
+    "message": "undefinedVariable is not defined"
 }
 ```
-
-## Step 10 create `createError.js`
-folder: `utils`
-file: `createError.js`
+## Step 10: Create `createError.js`
+**Folder:** `utils`
 
 ```js
 const createError = (statusCode, message) => {
-    const error = new Error(message)
-    error.statusCode = statusCode // add key = statusCode, value = statusCode 
-    throw error 
-}
+    const error = new Error(message);
+    error.statusCode = statusCode;
+    throw error;
+};
 
 module.exports = createError;
 ```
-## Step 11 import to use the util
-update auth-controller.js
+
+## Step 11: Import `createError.js` in `auth-controller.js`
 
 ```js
-// top
-const createError = require('../utils/createError')
+// Top of the file
+const createError = require('../utils/createError');
 ```
 
 ```js
-
 authController.register = (req, res, next) => {
-
     try {
-        // 1. req.body
-        const { email, firstName, lastName, password, confirmPassword } = req.body
-        console.log( email, firstName, lastName, password, confirmPassword)
+        const { email, firstName, lastName, password, confirmPassword } = req.body;
+        console.log(email, firstName, lastName, password, confirmPassword);
 
-        // 2. validate
-        // if (!email) {
-        //     // return res.status(400).json({ message: "email is require" })
-        //     return createError(400, "email is required")
-        // }
-
-        // if (!firstName) {
-        //     // return res.status(400).json({ message: "first name is require" })
-        //     return createError(400, "first name is required")
-        // }
-
-        // if (!lastName) {
-        //     return createError(400, "last name is required")
-        // }
-
-// ....
-
+        // Validation example
+        if (!email) {
+            return createError(400, "Email is required");
+        }
+    } catch (error) {
+        next(error);
+    }
+};
 ```
 
-
-## Step 12 create `middlewares` > `validators.js`
+## Step 12: Create `validators.js` in `middlewares`
 
 ```js
-const { z } = require("zod")
+const { z } = require("zod");
 
-// npm i zod
-// TEST validation
 exports.registerSchema = z.object({
-    email: z.string().email("email invalid"),
-    firstName: z.string().min(3, "firstName must > 3"),
-    lastName: z.string().min(3, "lastName must > 3"),
-    password: z.string().min(6, "password must > 6"),
-    confirmPassword: z.string().min(6, "password must > 6")
-}).refine((data) => data.password === data.confirmPassword, {
-    message: "Password not match",
+    email: z.string().email("Invalid email"),
+    firstName: z.string().min(3, "First name must be at least 3 characters"),
+    lastName: z.string().min(3, "Last name must be at least 3 characters"),
+    password: z.string().min(6, "Password must be at least 6 characters"),
+    confirmPassword: z.string().min(6, "Password must be at least 6 characters")
+}).refine(data => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
     path: ["confirmPassword"]
-})
+});
 
 exports.loginSchema = z.object({
-    email: z.string().email("email invalid"),
-    password: z.string().min(6, "password must > 6")
-})
+    email: z.string().email("Invalid email"),
+    password: z.string().min(6, "Password must be at least 6 characters")
+});
 
 exports.validationZod = (schema) => (req, res, next) => {
     try {
-        console.log("hello middleware")
-        // console.log("hello middleware")
-        schema.parse(req.body)
-
-        next()
+        schema.parse(req.body);
+        next();
     } catch (error) {
-        // console.log(error.errors[1].message)
-        const errMsg = error.errors.map(el => el.message)
-        const errTxt = errMsg.join(", ")
-        const mergeError = new Error(errTxt)
-        // combine all err msg
-
-        next(mergeError)
+        const errMsg = error.errors.map(el => el.message).join(", ");
+        const mergeError = new Error(errMsg);
+        next(mergeError);
     }
-}
+};
 ```
 
-
-## Step 13 update auth-route.js
+## Step 13: Update `auth-route.js`
 
 ```js
 const express = require("express");
-const router = express.Router()
+const router = express.Router();
 const authController = require("../controllers/auth-controller");
-const { validationZod, loginSchema, registerSchema } = require("../middlewares/validators")
+const { validationZod, loginSchema, registerSchema } = require("../middlewares/validators");
 
-// {{url}}/api/register
-router.post("/register", validationZod(registerSchema), authController.register)
-
-// {{url}}/api/login
-router.post("/login", validationZod(loginSchema), authController.login)
+router.post("/register", validationZod(registerSchema), authController.register);
+router.post("/login", validationZod(loginSchema), authController.login);
 
 module.exports = router;
 ```
 
-## Step 14 prisma update
-`prisma > schema.prisma`
+## Step 14: Update Prisma Schema (`schema.prisma`)
 
 ```js
 generator client {
@@ -398,123 +257,119 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-
 enum Role {
   USER
   ADMIN
 }
 
 model Profile {
-  id           Int        @id @default(autoincrement())
-  email       String  
-  firstName   String
-  lastName    String
-  role        Role        @default(USER)
-  password    String
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  id         Int      @id @default(autoincrement())
+  email      String   @unique
+  firstName  String
+  lastName   String
+  role       Role     @default(USER)
+  password   String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
 ```
 
-`.env`
-```
-DATABASE_URL="mysql://root:password@localhost:3306/landmark"
-```
+## Step 15: Prisma Migration
 
-## Step 15 prisma migrate
 ```bash
 npx prisma migrate dev --name init
 ```
-prisma > migrations > 202502050xxxxxx_init > `migration.sql`
-we'll see tables in db
 
-## Step 16
-create folder `configs`
+## Step 16: Create Prisma Configuration (`prisma.js`)
 
-file: prisma.js
 ```js
-const { PrismaClient } = require("@prisma/client")
-const prisma = new PrismaClient()
+const { PrismaClient } = require("@prisma/client");
+const prisma = new PrismaClient();
 
 module.exports = prisma;
 ```
 
-
-## Step 17 update controllers >  `auth-controller.js`
-check and create email
+## Step 17: Update `auth-controller.js`
 
 ```js
-const authController = {}
-const prisma = require('../configs/prisma')
-const createError = require('../utils/createError')
-const bcrypt = require("bcryptjs")
+const authController = {};
+const prisma = require('../configs/prisma');
+const createError = require('../utils/createError');
+const bcrypt = require("bcryptjs");
 
 authController.register = async (req, res, next) => {
-
     try {
-        // 1. req.body
-        const { email, firstName, lastName, password, confirmPassword } = req.body
-        
-        // 2. validate
-        // 3. check email(user) exist
+        const { email, firstName, lastName, password } = req.body;
 
-        const checkEmail = await prisma.profile.findFirst({
-            where: {
-                email,
-            }
-        })
+        const checkEmail = await prisma.profile.findFirst({ where: { email } });
+        if (checkEmail) return createError(400, "Email is already used");
 
-        // console.log(checkEmail) // return null is not dup. >> OK
+        const salt = bcrypt.genSaltSync(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
 
-        if (checkEmail) {
-            return createError(400, "email is already used")
+        await prisma.profile.create({
+            data: { email, firstName, lastName, password: hashedPassword }
+        });
+
+        res.json({ message: "Register success" });
+    } catch (error) {
+        next(error);
+    }
+};
+
+module.exports = authController;
+```
+
+## Step 18: Login Function
+
+```js
+const jwt = require("jsonwebtoken");
+
+authController.login = async (req, res, next) => {
+    try {
+        const { email, password } = req.body;
+        const profile = await prisma.profile.findFirst({ where: { email } });
+
+        if (!profile || !(await bcrypt.compare(password, profile.password))) {
+            return createError(400, "Email or password is invalid");
         }
 
-        // 4. encrypt using 'bcrypt'
-        const salt = bcrypt.genSaltSync(10)
-        // console.log(salt)
+        const payload = {
+            id: profile.id,
+            email: profile.email,
+            firstName: profile.firstName,
+            lastName: profile.lastName
+        };
 
-        const hashedPassword = await bcrypt.hash(password, salt)
-        console.log(hashedPassword)
+        const token = jwt.sign(payload, process.env.JWT_SECRET_KEY, {
+            expiresIn: process.env.JWT_EXPIRED_IN
+        });
 
-        // 5. insert into db
-        // 12sdfsdf34
-        const profile = await prisma.profile.create({
-            data: {
-                email,
-                firstName,
-                lastName,
-                password: hashedPassword
-            }
-        })
-
-        // 6. response to frontend >> register success
-        res.json({ message: "register success"})
-
+        res.json({ message: "Login success", payload, token });
     } catch (error) {
-        next(error)
+        next(error);
     }
-}
+};
 
-authController.login = (req, res, next) => {
-    try {
-        // console.log(sss) // test error
-        const { email, password } = req.body
-        res.json({ message: "login ..." })
-
-    } catch (error) {
-        next(error)
-    }
-}
-
-module.exports = authController
+module.exports = authController;
 ```
 
-check register using postman 
+## Step 19: Update `.env` File
 
-path: {{url}}/api/register
-
+```env
+DATABASE_URL="mysql://root:password@localhost:3306/landmark"
+JWT_SECRET_KEY=facebook
+JWT_EXPIRED_IN=1d
 ```
+
+## Step 20: Test with Postman
+
+### Register
+
+**Method:** `POST`
+**URL:** `{{url}}/api/register`
+**Body:**
+```json
 {
     "email": "admin@test.com",
     "firstName": "admin",
@@ -524,105 +379,22 @@ path: {{url}}/api/register
 }
 ```
 
-## Step 18 log in 
+### Login
 
-update file `auth-controller.js`
-
-```js
-// top
-const jwt = require("jsonwebtoken")
-```
-
-```js
-// bottom
-
-authController.login = async (req, res, next) => {
-    try {
-        // 1. req.body
-        const { email, password } = req.body
-
-        // 2. check email and password
-        const profile = await prisma.profile.findFirst({
-            where: {
-                email,
-            }
-        })
-
-        if (!profile) {
-            return createError(400, "Email or password is invalid")
-        }
-
-        console.log(profile)
-
-        // check password valid
-
-        const isPasswordValid = await bcrypt.compare(password, profile.password)
-
-        if (!isPasswordValid) {
-            return createError(400, "Password is invalid")
-        }
-
-        // 3. generate token
-        const payload = { 
-            id: profile.id,
-            email: profile.email,
-            firstName: profile.firstName,
-            lastName: profile.lastName
-        }
-
-        
-        const token = jwt.sign(payload, process.env.JWT_SECRET_KEY, {
-            expiresIn: process.env.JWT_EXPIRED_IN
-        })
-        
-        // console.log(token)
-
-        // 4. response
-
-        // console.log(sss) // test error
-        res.json({ message: "login success",
-            payload,
-            token
-         })
-
-    } catch (error) {
-        next(error)
-    }
-}
-
-module.exports = authController
-```
-
-## Step 20 update .env
-```js
-// bottom 
-
-JWT_SECRET_KEY=facebook
-JWT_EXPIRED_IN=1d
-```
-
-test: postman
-method: post
-url: {{url}}/api/login
-
-```
+**Method:** `POST`
+**URL:** `{{url}}/api/login`
+**Body:**
+```json
 {
     "email": "admin@test.com",
     "password": "12sdfsdf34"
 }
 ```
-```
-{
-    "message": "login success",
-    "payload": {
-        "id": 2,
-        "email": "admin@test.com",
-        "firstName": "admin",
-        "lastName": "admin"
-    },
-    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwiZW1haWwiOiJhZG1pbkB0ZXN0LmNvbSIsImZpcnN0TmFtZSI6ImFkbWluIiwibGFzdE5hbWUiOiJhZG1pbiIsImlhdCI6MTczODc0NTc5NCwiZXhwIjoxNzM4ODMyMTk0fQ.HmXsYGBfZTokrNW-wj-IZjThoDwT6QoEnqSzkfWiFvA"
-}
-```
+
+-----
+
+
+
 
 ## Step 21 Current user
 
